@@ -100,7 +100,7 @@ public abstract class ClassBasedTestDescriptor extends JupiterTestDescriptor {
 			else {
 				try {
 					testClassResolver = (Function<Class<?>, Class<?>>) Class.forName(
-                        resolverName).getConstructor().newInstance();
+						resolverName).getConstructor().newInstance();
 				}
 				catch (ReflectiveOperationException e) {
 					throw new JUnitException("Cannot resolve org.junit.TestClassResolver: " + resolverName, e);
