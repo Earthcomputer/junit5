@@ -88,11 +88,33 @@ public abstract class ClassBasedTestDescriptor extends JupiterTestDescriptor {
 	private List<Method> beforeAllMethods;
 	private List<Method> afterAllMethods;
 
+	private static Function<Class<?>, Class<?>> testClassResolver;
+
+	@SuppressWarnings("unchecked")
+	private static Class<?> resolveTestClass(Class<?> testClass) {
+		if (testClassResolver == null) {
+			String resolverName = System.getProperty("org.junit.TestClassResolver");
+			if (resolverName == null) {
+				testClassResolver = Function.identity();
+			}
+			else {
+				try {
+					testClassResolver = (Function<Class<?>, Class<?>>) Class.forName(
+							resolverName).getConstructor().newInstance();
+				}
+				catch (ReflectiveOperationException e) {
+					throw new JUnitException("Cannot resolve org.junit.TestClassResolver: " + resolverName, e);
+				}
+			}
+		}
+		return testClassResolver.apply(testClass);
+	}
+
 	ClassBasedTestDescriptor(UniqueId uniqueId, Class<?> testClass, Supplier<String> displayNameSupplier,
 			JupiterConfiguration configuration) {
 		super(uniqueId, testClass, displayNameSupplier, ClassSource.from(testClass), configuration);
 
-		this.testClass = testClass;
+		this.testClass = resolveTestClass(testClass);
 		this.tags = getTags(testClass);
 		this.lifecycle = getTestInstanceLifecycle(testClass, configuration);
 		this.defaultChildExecutionMode = (this.lifecycle == Lifecycle.PER_CLASS ? ExecutionMode.SAME_THREAD : null);
